@@ -1,9 +1,10 @@
 port module Capiguess exposing (..)
 
-import Html exposing (text, Html, div)
+import Html exposing (text, Html, div, button)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (int, string, list, array, Decoder)
-import Json.Decode.Pipeline exposing (decode, required, optional)
+import Json.Decode.Pipeline exposing (decode, required, optional, optionalAt)
 import Random
 import Random.List
 import Array
@@ -21,6 +22,8 @@ type Msg
     = NoOp
     | GetAllCountries (Result Http.Error Countries)
     | CountriesShuffled Countries
+    | NextCountry
+    | PreviousCountry
 
 
 init =
@@ -34,8 +37,9 @@ init =
 decodeCountry : Decoder Country
 decodeCountry =
     decode Country
-        |> required "name" Json.Decode.string
-        |> required "capital" Json.Decode.string
+        |> required "name" string
+        |> required "capital" string
+        |> optionalAt ["translations", "fr"] string ""
 
 
 decodeCountries : Decoder Countries
@@ -78,7 +82,7 @@ displayCountry : Country -> Html Msg
 displayCountry country =
     div
         []
-        [ text (country.name ++ " (" ++ country.capital ++ ")") ]
+        [ text ("What is the capital of " ++ country.fr ++ "? (" ++ country.capital ++ ")") ]
 
 
 displayCountries : ZipList Country -> Html Msg
@@ -90,12 +94,39 @@ displayCountries countries =
             ZipList.toList countries
 
 
+displayCurrent : ZipList Country -> Html Msg
+displayCurrent countries =
+    div
+        []
+    <|
+        case ZipList.current countries of
+            Nothing ->
+                []
+
+            Just country ->
+                [ displayCountry country ]
+
+
+displayButtons : Html Msg
+displayButtons =
+    div
+        []
+        [ button
+            [ onClick PreviousCountry ]
+            [ text "Previous" ]
+        , button
+            [ onClick NextCountry ]
+            [ text "Next" ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     div
         []
         [ displayHeader model
-        , displayCountries model.roundCountries
+        , displayCurrent model.roundCountries
+        , displayButtons
         ]
 
 
@@ -112,6 +143,12 @@ update msg model =
 
         CountriesShuffled shuffledCountries ->
             ( { model | roundCountries = ZipList.init shuffledCountries }, Cmd.none )
+
+        NextCountry ->
+            ( { model | roundCountries = ZipList.next model.roundCountries }, Cmd.none )
+
+        PreviousCountry ->
+            ( { model | roundCountries = ZipList.previous model.roundCountries }, Cmd.none )
 
         NoOp ->
             model ! []
