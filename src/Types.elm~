@@ -1,0 +1,5 @@
+module Types exposing (Country)
+
+
+type alias Country =
+    {}

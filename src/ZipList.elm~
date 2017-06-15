@@ -1,0 +1,75 @@
+module ZipList
+    exposing
+        ( ZipList
+        , init
+        , next
+        , previous
+        , toList
+        , length
+        )
+
+
+type ZipList a
+    = Empty
+    | NonEmpty (NonEmpty a)
+
+
+type alias NonEmpty a =
+    { before : List a
+    , current : a
+    , after : List a
+    }
+
+
+init : List a -> Maybe (ZipList a)
+init list =
+    case list of
+        [] ->
+            Nothing
+
+        head :: queue ->
+            Just
+                { before = []
+                , current = head
+                , after = queue
+                }
+
+
+next : ZipList a -> ZipList a
+next zipList =
+    case zipList.after of
+        [] ->
+            zipList
+
+        head :: queue ->
+            { before = zipList.current :: zipList.before
+            , current = head
+            , after = queue
+            }
+
+
+previous : ZipList a -> ZipList a
+previous zipList =
+    case zipList.before of
+        [] ->
+            zipList
+
+        head :: queue ->
+            { before = queue
+            , current = head
+            , after = zipList.current :: zipList.after
+            }
+
+
+toList : ZipList a -> List a
+toList zipList =
+    List.concat
+        [ List.reverse zipList.before
+        , [ zipList.current ]
+        , zipList.after
+        ]
+
+
+length : ZipList a -> Int
+length zipList =
+    1 + (List.length zipList.before) + (List.length zipList.after)
