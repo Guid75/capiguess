@@ -21,26 +21,14 @@ suite =
                     Expect.equal (Just 1) (ZipList.init [ 1, 2 ] |> ZipList.current)
             ]
         , describe "The next function" <|
-            [ test "An empty list" <|
-                \_ ->
-                    moveTest ZipList.next [] Nothing
-            , test "already at the list end" <|
-                \_ ->
-                    moveTest ZipList.next [ 1 ] (Just 1)
-            , test "still some moves to make" <|
-                \_ ->
-                    moveTest ZipList.next [ 1, 2 ] (Just 2)
+            [ moveTest "An empty list" ZipList.next [] Nothing
+            , moveTest "already at the list end" ZipList.next [ 1 ] (Just 1)
+            , moveTest "still some moves to make" ZipList.next [ 1, 2 ] (Just 2)
             ]
         , describe "The previous function" <|
-            [ test "An empty list" <|
-                \_ ->
-                    moveTest ZipList.previous [] Nothing
-            , test "already at the list beginning" <|
-                \_ ->
-                    moveTest ZipList.previous [ 1 ] (Just 1)
-            , test "still some moves to make" <|
-                \_ ->
-                    moveTest (ZipList.next >> ZipList.previous) [ 1, 2 ] (Just 1)
+            [ moveTest "An empty list" ZipList.previous [] Nothing
+            , moveTest "already at the list beginning" ZipList.previous [ 1 ] (Just 1)
+            , moveTest "still some moves to make" (ZipList.next >> ZipList.previous) [ 1, 2 ] (Just 1)
             ]
         , fuzz (list int) "The length function" <|
             \randomList ->
@@ -48,13 +36,17 @@ suite =
         ]
 
 
-moveTest : (ZipList a -> ZipList a) -> List a -> Maybe a -> Expectation
-moveTest moveFunc list expectedValue =
-    let
-        zipList =
-            ZipList.init list
+{-| Given a "move" function, a list of item, returns an expectation that will check that the current value of the built ziplist will be equal to the given expected value
+-}
+moveTest : String -> (ZipList a -> ZipList a) -> List a -> Maybe a -> Test
+moveTest testLabel moveFunc list expectedValue =
+    test testLabel <|
+        \_ ->
+            let
+                zipList =
+                    ZipList.init list
 
-        nextZipList =
-            moveFunc zipList
-    in
-        Expect.equal expectedValue (ZipList.current nextZipList)
+                nextZipList =
+                    moveFunc zipList
+            in
+                Expect.equal expectedValue (ZipList.current nextZipList)
